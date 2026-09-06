@@ -1,0 +1,30 @@
+{
+  "Isolation Forest": {
+    "accuracy": 0.6223582568138756,
+    "precision": 0.8276274618074728,
+    "recall": 0.3967616694608665,
+    "f1_score": 0.536383156387928
+  },
+  "Random Forest": {
+    "accuracy": 0.8716173541271923,
+    "precision": 0.8177165210397397,
+    "recall": 0.9868084355422219,
+    "f1_score": 0.8943401507427178
+  },
+  "XGBoost": {
+    "accuracy": 0.8757834134965748,
+    "precision": 0.8235662801629583,
+    "recall": 0.9855289861466514,
+    "f1_score": 0.8972976229927997
+  },
+  "Hybrid Model": {
+    "accuracy": 0.885002186270223,
+    "precision": 0.8372324820400948,
+    "recall": 0.9820656489896762,
+    "f1_score": 0.9038840273688913
+  },
+  "train_rows": 175341,
+  "test_rows": 82332,
+  "normal_label": 0,
+  "attack_label": 1
+}
