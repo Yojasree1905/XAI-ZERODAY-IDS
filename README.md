@@ -17,6 +17,10 @@
   - [Architecture 4: Component Interaction & Inter-Module Communication](#architecture-4-component-interaction--inter-module-communication)
 - [Core Modules & Operational Features](#core-modules--operational-features)
 - [Empirical Performance & Evaluation Benchmarks](#empirical-performance--evaluation-benchmarks)
+- [UNSW-NB15 Benchmark Dataset Overview](#unsw-nb15-benchmark-dataset-overview)
+  - [Dataset Partitioning & Split](#dataset-partitioning--split)
+  - [Taxonomy of 9 Attack Families](#taxonomy-of-9-attack-families)
+  - [Why UNSW-NB15 over Legacy Datasets](#why-unsw-nb15-over-legacy-datasets)
 - [UNSW-NB15 Feature Reference Schema](#unsw-nb15-feature-reference-schema)
 - [Repository Structure](#repository-structure)
 - [Step-by-Step Installation & Execution Guide](#step-by-step-installation--execution-guide)
@@ -258,15 +262,6 @@ The following diagram maps the explicit Python code-level interactions, module d
 +--------------------------------------------------------------------------------------+
 ```
 
-#### Detailed Inter-Module Responsibilities:
-* **`src/config.py`**: Holds global path definitions (`MODEL_DIR`, `DATA_DIR`), feature column definitions (`CATEGORICAL_COLS`, `NUMERICAL_COLS`, `ALL_FEATURES`), and threat risk weight constants.
-* **`src/loader.py`**: Responsible for loading serialized scikit-learn/XGBoost models (`rf_model.pkl`, `xgb_model.pkl`, `iso_model.pkl`) and preprocessor transformers (`preprocessor.pkl`).
-* **`src/generator.py`**: Generates synthetic, mathematically diverse network packet samples on demand for real-time scenario simulation.
-* **`src/preprocessing.py`**: Executes feature alignment, missing value imputation, one-hot encoding, and standard scaling.
-* **`src/hybrid.py`**: Serves as the central inference orchestrator. It receives raw DataFrames, passes them through `src/preprocessing.py`, executes parallel predictions across the model trio, and evaluates the consensus decision matrix.
-* **`src/explain.py`**: Receives model instances and preprocessed data arrays to generate SHAP summary figures and LIME local feature explanations.
-* **`ui/app.py`**: Streamlit presentation layer that imports all backend modules, providing interactive controls, metrics gauges, and visualization tabs.
-
 ---
 
 ## Core Modules & Operational Features
@@ -303,6 +298,39 @@ The hybrid engine was evaluated on the benchmark **UNSW-NB15** network intrusion
 | **Random Forest Classifier** | 87.04% | 81.64% | 98.65% | 89.34% | High-Recall Baseline Classifier |
 | **Isolation Forest** | 32.24% | 51.94% | 7.61% | 13.27% | Unsupervised Zero-Day Anomaly Detector |
 | **Hybrid Consensus Ensemble** | **95.82%** | **95.20%** | **98.71%** | **96.91%** | Production Decision Engine |
+
+---
+
+## 📊 UNSW-NB15 Benchmark Dataset Overview
+
+### Origin & Background
+The **UNSW-NB15** dataset was created by the **Cyber Range Lab of the Australian Centre for Cyber Security (ACCS)** at the University of New South Wales (UNSW Canberra). It was generated using the IXIA PerfectStorm tool to capture a realistic synthesis of modern normal network activity combined with synthetic modern attack behaviors.
+
+### Dataset Partitioning & Split
+The project utilizes the official benchmark split of UNSW-NB15:
+* **Training Partition (`UNSW_NB15_training-set.csv`)**: 175,341 connection records.
+* **Testing Partition (`UNSW_NB15_testing-set.csv`)**: 82,332 connection records.
+* **Total Benchmark Corpus**: 257,673 labeled network flow records across 42 predictive features.
+
+### Taxonomy of 9 Attack Families
+
+| Attack Family | Category Description & Threat Behavior | UNSW-NB15 Instance Pattern |
+| :--- | :--- | :--- |
+| **Fuzzers** | Attempts to discover security vulnerabilities by feeding invalid, unexpected, or random data inputs to protocols. | High packet rate, randomized TTLs, malformed packet sizes. |
+| **Analysis** | Intrusion attempts designed to gather target system details via port scanning, spam, and HTML page probing. | Repeated connection attempts across specific HTTP/DNS services. |
+| **Backdoors** | Stealthy mechanisms bypassing normal authentication to maintain unauthorized remote access. | Low-frequency persistent TCP streams with unusual window sizes (`swin`/`dwin`). |
+| **DoS (Denial of Service)** | Attacks flooding target servers with volumetric traffic to exhaust memory, CPU, or network bandwidth. | Extreme packet transmission rates (`rate` > 5,000 pkts/sec) & high source load (`sload`). |
+| **Exploits** | Targeted attacks exploiting known software vulnerabilities, buffer overflows, or privilege escalation bugs. | Specific payload length signatures (`response_body_len`) and flow commands. |
+| **Generic** | Cryptographic or protocol-level attacks targeting block cipher primitives independent of specific application bugs. | Consistent collision patterns across state counters (`ct_state_ttl`). |
+| **Reconnaissance** | Active scanning and probing activities gathering host OS, open port, and network topology profiles. | Rapid sequential destination port connections (`ct_src_dport_ltm`). |
+| **Shellcode** | Small executable payloads injected to spawn interactive command-line shell sessions on vulnerable target hosts. | Short connection duration (`dur`) paired with specific byte ratios (`sbytes`/`dbytes`). |
+| **Worms** | Self-propagating malicious software replicating autonomously across host network segments. | High destination host count (`ct_dst_ltm`) over short time windows. |
+
+### Why UNSW-NB15 over Legacy Datasets
+Unlike legacy intrusion datasets such as **KDD99** or **NSL-KDD** (which were synthesized in 1999 and suffer from redundant records, outdated attack patterns, and unrealistic traffic distribution artifacts), **UNSW-NB15**:
+1. Reflects modern enterprise transport protocols (TCP, UDP, ICMP, ARP, OSPF, SCTP).
+2. Contains realistic packet inter-arrival times (`sinpkt`/`dinpkt`) and jitter statistics (`sjit`/`djit`).
+3. Incorporates complex low-frequency attack patterns and zero-day anomaly distributions typical of modern network environments.
 
 ---
 
