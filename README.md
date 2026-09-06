@@ -11,8 +11,9 @@
 ## Table of Contents
 - [Executive Summary](#executive-summary)
 - [System Architecture & Working Flow](#system-architecture--working-flow)
-  - [Architectural Flow Diagram](#architectural-flow-diagram)
-  - [Detailed Layer Breakdown](#detailed-layer-breakdown)
+  - [Architecture 1: End-to-End Data & Pipeline Architecture](#architecture-1-end-to-end-data--pipeline-architecture)
+  - [Architecture 2: Hybrid Consensus & Threat Decision Flowchart](#architecture-2-hybrid-consensus--threat-decision-flowchart)
+  - [Architecture 3: Explainable AI (XAI) Audit & Governance Architecture](#architecture-3-explainable-ai-xai-audit--governance-architecture)
 - [Core Modules & Operational Features](#core-modules--operational-features)
 - [Empirical Performance & Evaluation Benchmarks](#empirical-performance--evaluation-benchmarks)
 - [UNSW-NB15 Feature Reference Schema](#unsw-nb15-feature-reference-schema)
@@ -32,116 +33,189 @@
 
 ## System Architecture & Working Flow
 
-### Architectural Flow Diagram
+To provide complete transparency into the system's inner workings, **XAI-ZERODAY-IDS** is structured around **three distinct architectural diagrams**:
+1. **End-to-End Data & Pipeline Architecture**: Mapping the high-level movement of network connection attributes from ingestion to visualization.
+2. **Hybrid Consensus & Threat Decision Flowchart**: Illustrating the exact mathematical rules and voting logic for classifying threats.
+3. **Explainable AI (XAI) Audit & Governance Architecture**: Details how SHAP and LIME surrogate models extract feature-level attributions.
 
-The following diagram illustrates the complete end-to-end data processing, feature transformation, predictive inference, consensus aggregation, and XAI explanation pipeline:
+---
+
+### Architecture 1: End-to-End Data & Pipeline Architecture
+
+The following diagram details the flow of data through ingestion, preprocessing, parallel model execution, hybrid consensus calculation, XAI explainer generation, and Streamlit user presentation:
 
 ```
-+-----------------------------------------------------------------------------------+
-|                            STAGE 1: DATA INGESTION                                |
-|  +--------------------------+  +-------------------------+  +------------------+  |
-|  | Live Traffic Generator   |  | Single Packet Form      |  | Batch Log CSV    |  |
-|  | (Dynamic Scenario Engine)|  | (Manual Field Inspector)|  | (PCAP Ingestion) |  |
-|  +------------+-------------+  +------------+------------+  +--------+---------+  |
-+---------------+-----------------------------+------------------------+------------+
-                |                             |                        |
-                +-----------------------------+------------------------+
-                                              |
-                                              v
-+-----------------------------------------------------------------------------------+
-|                        STAGE 2: PREPROCESSING & SCALING                           |
-|  +-----------------------------------------------------------------------------+  |
-|  | Categorical Encoding (OneHotEncoder: proto, service, state)                 |  |
-|  | Numerical Feature Normalization (StandardScaler: 39 attributes)             |  |
-|  | Output: 194-Dimension Dense Feature Alignment Matrix                        |  |
-|  +--------------------------------------+--------------------------------------+  |
-+-----------------------------------------|-----------------------------------------+
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                     STAGE 3: PARALLEL MODEL INFERENCE ENGINE                      |
-|                                                                                   |
-|    +----------------------------------+    +----------------------------------+   |
-|    |      SUPERVISED DETECTORS        |    |      UNSUPERVISED ESTIMATOR      |   |
-|    |                                  |    |                                  |   |
-|    |  +----------------------------+  |    |  +----------------------------+  |   |
-|    |  | XGBoost Classifier         |  |    |  | Isolation Forest           |  |   |
-|    |  | (Primary Gradient Boosted) |  |    |  | (Zero-Day Anomaly Detector)|  |   |
-|    |  +----------------------------+  |    |  +----------------------------+  |   |
-|    |  | Random Forest Classifier   |  |    |                                  |   |
-|    |  | (High-Recall Ensemble)     |  |    |                                  |   |
-|    |  +----------------------------+  |    |                                  |   |
-|    +----------------+-----------------+    +----------------+-----------------+   |
-+---------------------|---------------------------------------|---------------------+
-                      |                                       |
-                      +-------------------+-------------------+
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                     STAGE 4: HYBRID CONSENSUS DECISION ENGINE                     |
-|  +-----------------------------------------------------------------------------+  |
-|  | 3-Way Rule-Based Consensus Matrix:                                          |  |
-|  |  - Normal Verdict: XGBoost=Normal AND RF=Normal AND IsoForest=Normal          |  |
-|  |  - Attack Verdict: Supervised Estimators Flag Known Signature Pattern       |  |
-|  |  - Zero-Day Anomaly Verdict: Supervised=Normal BUT IsoForest=Outlier          |  |
-|  | Risk Score Aggregation: Weighted Confidence Scoring (0% to 100%)              |  |
-|  +--------------------------------------+--------------------------------------+  |
-+-----------------------------------------|-----------------------------------------+
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                     STAGE 5: EXPLAINABLE AI (XAI) ENGINE                          |
-|  +-----------------------------------------------------------------------------+  |
-|  | SHAP (SHapley Additive exPlanations): TreeExplainer Global Feature Impact   |  |
-|  | LIME (Local Interpretable Model-agnostic Explanations): Local Weights        |  |
-|  +--------------------------------------+--------------------------------------+  |
-+-----------------------------------------|-----------------------------------------+
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                     STAGE 6: ENTERPRISE STREAMLIT DASHBOARD UI                    |
-|  +-------------------+ +--------------------+ +---------------+ +---------------+ |
-|  | Live Stream       | | Single Packet      | | Batch Log     | | Engine        | |
-|  | Monitor           | | Inspector          | | Analyzer      | | Telemetry     | |
-|  +-------------------+ +--------------------+ +---------------+ +---------------+ |
-|  +------------------------------------------------------------------------------+ |
-|  | XAI Threat Audit & Governance Center                                         | |
-|  +------------------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------+
+|                 ARCHITECTURE 1: END-TO-END DATA & PIPELINE ARCHITECTURE               |
++---------------------------------------------------------------------------------------+
+
+  [ Raw Network Ingestion Sources ]
+  +-------------------------------+   +-----------------------------+   +-----------------------------+
+  | Live Traffic Stream Simulator |   | Single Packet Form Inputs   |   | Batch PCAP/CSV Log File     |
+  | (Dynamic Scenario Generator)  |   | (Manual Feature Testing)    |   | (UNSW-NB15 Bulk Processing) |
+  +---------------+---------------+   +--------------+--------------+   +--------------+--------------+
+                  |                                  |                                 |
+                  +----------------------------------+---------------------------------+
+                                                     |
+                                                     v
+  [ Preprocessing & Transformation Engine ]
+  +--------------------------------------------------------------------------------------------------+
+  | ColumnTransformer Pipeline                                                                       |
+  |  * OneHotEncoder: Converts categorical columns ('proto', 'service', 'state') -> One-Hot Vectors   |
+  |  * StandardScaler: Normalizes 39 numerical features (mean=0, variance=1)                         |
+  |  * Output Matrix: 194-Dimensional Dense Feature Alignment Vector                                 |
+  +--------------------------------------------------+-----------------------------------------------+
+                                                     |
+                                                     v
+  [ Multi-Model Parallel Inference Engine ]
+  +--------------------------------------------------+-----------------------------------------------+
+  |  +--------------------------------------------+   |   +---------------------------------------+  |
+  |  | Supervised Attack Estimators               |   |   | Unsupervised Anomaly Estimator        |  |
+  |  |                                            |   |   |                                       |  |
+  |  | 1. XGBoost (Gradient Boosted Trees)        |   |   | 3. Isolation Forest (iForest)         |  |
+  |  |    -> Returns P(Attack) & Class Verdict    |   |   |    -> Returns Anomaly Score & Outlier |  |
+  |  |                                            |   |   |       Decision Path (-1 / +1)         |  |
+  |  | 2. Random Forest (100 Decision Trees)      |   |   |                                       |  |
+  |  |    -> Returns P(Attack) & Class Verdict    |   |   |                                       |  |
+  |  +---------------------+----------------------+   |   +-------------------+-------------------+  |
+  +------------------------|--------------------------+-----------------------|----------------------+
+                           |                                                  |
+                           +------------------------+-------------------------+
+                                                    |
+                                                    v
+  [ Hybrid Consensus & Aggregation Layer ]
+  +--------------------------------------------------------------------------------------------------+
+  |  * Applies 3-Way Rule Decision Engine (Normal vs. Attack vs. Zero-Day Anomaly)                   |
+  |  * Computes Composite Risk Percentage Score: Risk Score = w_xgb * P_xgb + w_rf * P_rf + w_iso * S_iso|
+  +--------------------------------------------------+-----------------------------------------------+
+                                                     |
+                                                     v
+  [ Explainable AI (XAI) Forensic Engine ]
+  +--------------------------------------------------------------------------------------------------+
+  |  * SHAP Engine: TreeExplainer Shapley Values for Global Feature Importance                       |
+  |  * LIME Engine: Local Linear Surrogate Model for Packet-Level Feature Weights                      |
+  +--------------------------------------------------+-----------------------------------------------+
+                                                     |
+                                                     v
+  [ Presentation & SOC User Interface Layer ]
+  +--------------------------------------------------------------------------------------------------+
+  | Streamlit Multi-Module Operations Dashboard (Live Monitor, Inspector, Batch Log, Telemetry, XAI) |
+  +--------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-### Detailed Layer Breakdown
+### Architecture 2: Hybrid Consensus & Threat Decision Flowchart
 
-#### 1. Ingestion Layer
-* **Live Dynamic Scenario Engine**: Generates real-time network streams using mathematical distribution sampling (uniform, Gaussian, multi-modal) across 42 network flow features.
-* **Single Packet Manual Inspector**: Allows SOC analysts to construct custom packet headers and payload statistics for hypothesis testing.
-* **Batch PCAP/CSV Ingestion**: Handles bulk log file uploads, parsing raw attributes into tabular structures.
+The following flowchart illustrates the exact algorithmic decision rules, voting logic, and thresholding steps used to categorize every network connection into **Normal Traffic**, **Known Malicious Attack**, or **Zero-Day Anomaly**:
 
-#### 2. Preprocessing & Feature Engineering Layer
-* **Categorical Transformer**: Applies `OneHotEncoder` to categorical attributes (`proto`, `service`, `state`), expanding categorical combinations.
-* **Numerical Transformer**: Standardizes 39 numerical features (`dur`, `sbytes`, `dbytes`, `sttl`, `rate`, etc.) using `StandardScaler` to remove scale bias across features.
-* **Feature Alignment Pipeline**: Constructs a unified 194-dimension sparse/dense matrix matching the exact input feature format required by the trained estimators.
+```
++---------------------------------------------------------------------------------------+
+|               ARCHITECTURE 2: HYBRID CONSENSUS & THREAT DECISION FLOWCHART            |
++---------------------------------------------------------------------------------------+
 
-#### 3. Multi-Model Inference Execution Layer
-* **XGBoost Classifier**: A gradient boosted decision tree classifier serving as the primary supervised threat detector for catalogued attack vectors.
-* **Random Forest Classifier**: An ensemble of 100 decision trees operating as a high-recall secondary classifier.
-* **Isolation Forest**: An unsupervised anomaly estimator trained exclusively on normal traffic distributions to measure structural divergence and isolate zero-day anomalies.
+                         +----------------------------------------+
+                         | Preprocessed Network Connection Flow   |
+                         |      (194-Dimension Feature Vector)    |
+                         +-------------------+--------------------+
+                                             |
+                        +--------------------+--------------------+
+                        |                                         |
+                        v                                         v
+        +-------------------------------+       +------------------------------------+
+        | Supervised ML Models          |       | Unsupervised Anomaly Model         |
+        | (XGBoost & Random Forest)     |       | (Isolation Forest)                 |
+        +---------------+---------------+       +-----------------+------------------+
+                        |                                         |
+                        v                                         v
+        +-------------------------------+       +------------------------------------+
+        | Calculate Attack Probability  |       | Calculate Structural Anomaly Score |
+        |   P_sup = max(P_xgb, P_rf)    |       |  Score_iso in [-1.0, +1.0]         |
+        +---------------+---------------+       +-----------------+------------------+
+                        |                                         |
+                        +-------------------+---------------------+
+                                            |
+                                            v
+                                 /---------------------\
+                                /   Is P_sup >= 0.50   \
+                                \   (Supervised Threat)\
+                                 \---------------------/
+                                    /               \
+                                   /                 \ YES
+                               NO /                   \
+                                 v                     v
+                     /---------------------\   +------------------------------------+
+                    /  Is Score_iso == -1   \  |   VERDICT: MALICIOUS ATTACK        |
+                    \ (Isol. Forest Outlier)/  |   - Status: "Attack"               |
+                     \---------------------/   |   - Action: Block IP & Firewall    |
+                        /               \      |   - Risk: High (75% - 100%)        |
+                       /                 \ YES +------------------------------------+
+                   NO /                   \
+                     v                     v
+      +----------------------------+   +------------------------------------+
+      | VERDICT: NORMAL TRAFFIC    |   | VERDICT: ZERO-DAY ANOMALY          |
+      | - Status: "Normal"         |   | - Status: "Zero-Day Anomaly"       |
+      | - Action: Authorized Pass  |   | - Action: Quarantine & Deep Inspect|
+      | - Risk: Low (0% - 25%)     |   | - Risk: Medium-High (50% - 75%)    |
+      +----------------------------+   +------------------------------------+
+```
 
-#### 4. Hybrid Consensus & Risk Scoring Layer
-* **Consensus Logic**: Combines supervised signature matching with unsupervised anomaly detection according to the following decision matrix:
-  - **Normal**: Supervised models evaluate Normal AND Isolation Forest evaluates Normal.
-  - **Malicious Threat**: Supervised models detect known attack patterns.
-  - **Zero-Day Anomaly**: Supervised models evaluate Normal (signature absent), but Isolation Forest flags an outlier anomaly (structural anomaly).
-* **Risk Score Aggregation**: Computes a dynamic threat probability score normalized between 0.0% and 100.0%.
+#### Detailed Decision Rules:
+1. **Malicious Attack Verdict**: Triggered when either supervised model (XGBoost or Random Forest) detects a matching known attack signature ($P_{\text{sup}} \ge 0.50$).
+2. **Zero-Day Anomaly Verdict**: Triggered when supervised models classify the traffic as normal ($P_{\text{sup}} < 0.50$), but Isolation Forest identifies a structural outlier ($\text{Score}_{\text{iso}} = -1$) due to un-catalogued behavior.
+3. **Normal Verdict**: Triggered when both supervised models and Isolation Forest confirm normal connection metrics ($P_{\text{sup}} < 0.50$ and $\text{Score}_{\text{iso}} = +1$).
 
-#### 5. Explainable AI (XAI) Interpretability Layer
-* **SHAP (SHapley Additive exPlanations)**: Calculates Shapley values via `TreeExplainer` to establish global feature importance rankings and summary impact plots.
-* **LIME (Local Interpretable Model-agnostic Explanations)**: Generates local linear surrogate models around individual prediction instances, highlighting positive (threat-increasing) and negative (threat-decreasing) feature contribution weights.
+---
 
-#### 6. Presentation & Dashboard Layer
-* **Streamlit UI**: Renders an interactive web interface featuring live streaming tables, risk gauges, metric cards, confusion matrices, audit logs, and XAI visualizations.
+### Architecture 3: Explainable AI (XAI) Audit & Governance Architecture
+
+The following diagram illustrates how SHAP and LIME interact with trained model estimators and feature transformers to produce global feature rankings and packet-level explanations for security analysts:
+
+```
++---------------------------------------------------------------------------------------+
+|             ARCHITECTURE 3: EXPLAINABLE AI (XAI) AUDIT & GOVERNANCE ARCHITECTURE      |
++---------------------------------------------------------------------------------------+
+
+   +---------------------------------+                  +--------------------------------+
+   |   Trained XGBoost / RF Models   |                  |  Selected Connection Packet    |
+   |      (Model Estimator Objects)  |                  | (Raw Input Record / CSV Row)   |
+   +----------------+----------------+                  +---------------+----------------+
+                    |                                                   |
+                    v                                                   v
+   +---------------------------------+                  +--------------------------------+
+   | Background Reference Distribution|                 | Feature Preprocessing Matrix   |
+   |  (Sample Dataset Matrix: N=100) |                  | (ColumnTransformer Output)     |
+   +----------------+----------------+                  +---------------+----------------+
+                    |                                                   |
+                    +------------------------+--------------------------+
+                                             |
+                                             v
+                         +-------------------+-------------------+
+                         |                                       |
+                         v                                       v
+      +-------------------------------------+ +-------------------------------------+
+      | GLOBAL EXPLANATION ENGINE: SHAP     | | LOCAL EXPLANATION ENGINE: LIME      |
+      |                                     | |                                     |
+      | 1. Instantiates TreeExplainer       | | 1. Instantiates LimeTabularExplainer|
+      | 2. Computes Shapley Additive        | | 2. Generates Local Perturbation     |
+      |    Values across feature space      | |    Samples around the target packet  |
+      | 3. Aggregates Mean Absolute SHAP    | | 3. Fits Ridge Regression Surrogate  |
+      |    Impact for Global Feature Rank   | | 4. Extracts Positive/Negative       |
+      | 4. Generates SHAP Summary Plot &    | |    Feature Contribution Weights     |
+      |    Global Feature Bar Charts        | | 5. Maps Feature Ranges to Plain-    |
+      |                                     | |    English Field Definitions        |
+      +------------------+------------------+ +------------------+------------------+
+                         |                                       |
+                         +-------------------+-------------------+
+                                             |
+                                             v
+                      +---------------------------------------------+
+                      | Streamlit XAI Audit Center UI Presentation  |
+                      |  - Global SHAP Summary Plot & Feature Ranks |
+                      |  - Local LIME Feature Weight Bar Charts     |
+                      |  - Plain-English Feature Glossary Lookup    |
+                      +---------------------------------------------+
+```
 
 ---
 
