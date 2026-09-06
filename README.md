@@ -14,12 +14,13 @@
   - [Architecture 1: End-to-End Data & Pipeline Architecture](#architecture-1-end-to-end-data--pipeline-architecture)
   - [Architecture 2: Hybrid Consensus & Threat Decision Flowchart](#architecture-2-hybrid-consensus--threat-decision-flowchart)
   - [Architecture 3: Explainable AI (XAI) Audit & Governance Architecture](#architecture-3-explainable-ai-xai-audit--governance-architecture)
+  - [Architecture 4: Component Interaction & Inter-Module Communication](#architecture-4-component-interaction--inter-module-communication)
 - [Core Modules & Operational Features](#core-modules--operational-features)
 - [Empirical Performance & Evaluation Benchmarks](#empirical-performance--evaluation-benchmarks)
 - [UNSW-NB15 Feature Reference Schema](#unsw-nb15-feature-reference-schema)
 - [Repository Structure](#repository-structure)
 - [Step-by-Step Installation & Execution Guide](#step-by-step-installation--execution-guide)
-- [License](#license)
+- [License & Author](#license--author)
 
 ---
 
@@ -33,10 +34,11 @@
 
 ## System Architecture & Working Flow
 
-To provide complete transparency into the system's inner workings, **XAI-ZERODAY-IDS** is structured around **three distinct architectural diagrams**:
+To provide complete transparency into the system's inner workings, **XAI-ZERODAY-IDS** is structured around **four distinct architectural diagrams**:
 1. **End-to-End Data & Pipeline Architecture**: Mapping the high-level movement of network connection attributes from ingestion to visualization.
 2. **Hybrid Consensus & Threat Decision Flowchart**: Illustrating the exact mathematical rules and voting logic for classifying threats.
 3. **Explainable AI (XAI) Audit & Governance Architecture**: Details how SHAP and LIME surrogate models extract feature-level attributions.
+4. **Component Interaction & Inter-Module Communication**: Detailing python code-level module dependencies and function invocation paths.
 
 ---
 
@@ -154,16 +156,11 @@ The following flowchart illustrates the exact algorithmic decision rules, voting
                      v                     v
       +----------------------------+   +------------------------------------+
       | VERDICT: NORMAL TRAFFIC    |   | VERDICT: ZERO-DAY ANOMALY          |
-      | - Status: "Normal"         |   | - Status: "Zero-Day Anomaly"       |
+      | - Status: "Normal"         |   | - Status: "Normal"                 |
       | - Action: Authorized Pass  |   | - Action: Quarantine & Deep Inspect|
       | - Risk: Low (0% - 25%)     |   | - Risk: Medium-High (50% - 75%)    |
       +----------------------------+   +------------------------------------+
 ```
-
-#### Detailed Decision Rules:
-1. **Malicious Attack Verdict**: Triggered when either supervised model (XGBoost or Random Forest) detects a matching known attack signature ($P_{\text{sup}} \ge 0.50$).
-2. **Zero-Day Anomaly Verdict**: Triggered when supervised models classify the traffic as normal ($P_{\text{sup}} < 0.50$), but Isolation Forest identifies a structural outlier ($\text{Score}_{\text{iso}} = -1$) due to un-catalogued behavior.
-3. **Normal Verdict**: Triggered when both supervised models and Isolation Forest confirm normal connection metrics ($P_{\text{sup}} < 0.50$ and $\text{Score}_{\text{iso}} = +1$).
 
 ---
 
@@ -216,6 +213,59 @@ The following diagram illustrates how SHAP and LIME interact with trained model 
                       |  - Plain-English Feature Glossary Lookup    |
                       +---------------------------------------------+
 ```
+
+---
+
+### Architecture 4: Component Interaction & Inter-Module Communication
+
+The following diagram maps the explicit Python code-level interactions, module dependencies, and invocation paths between the core `src/` modules and the `ui/app.py` presentation engine:
+
+```
++---------------------------------------------------------------------------------------+
+|          ARCHITECTURE 4: COMPONENT INTERACTION & INTER-MODULE COMMUNICATION           |
++---------------------------------------------------------------------------------------+
+
+                         +-----------------------------------+
+                         |           src/config.py           |
+                         | (Centralized Paths & Constants)   |
+                         +-----------------+-----------------+
+                                           |
+                                           v  (Imports Constants & Schema)
+       +-----------------------------------+-----------------------------------+
+       |                                   |                                   |
+       v                                   v                                   v
++--------------+                   +---------------+                   +---------------+
+| src/loader.py|                   |src/generator.p|                   |src/explain.py |
+| (Model Assets|                   |(Dynamic Stream|                   |(SHAP & LIME   |
+|  & Scalers)  |                   |  Synthesis)   |                   | Explanations) |
++-------+------+                   +-------+-------+                   +-------+-------+
+        |                                  |                                   |
+        |                                  |                                   |
+        +------------------+---------------+-----------------------------------+
+                           |
+                           v  (Orchestrates Data & Models)
++--------------------------+-----------------------------------------------------------+
+|                                    src/hybrid.py                                     |
+|  1. Calls src/preprocessing.py -> Transforms raw DataFrames into aligned matrices      |
+|  2. Calls Model Objects        -> Runs parallel XGBoost, Random Forest & IsoForest   |
+|  3. Evaluates Rule Matrix      -> Computes Hybrid Verdict & Dynamic Risk Score (%)   |
++------------------------------------------+-------------------------------------------+
+                                           |
+                                           v  (Outputs DataFrames & Metrics)
++------------------------------------------+-------------------------------------------+
+|                                      ui/app.py                                       |
+|  (Streamlit Multi-Tab SOC Interface: Live Stream, Inspector, Batch, Telemetry, XAI)  |
++--------------------------------------------------------------------------------------+
+```
+
+#### Detailed Inter-Module Responsibilities:
+* **`src/config.py`**: Holds global path definitions (`MODEL_DIR`, `DATA_DIR`), feature column definitions (`CATEGORICAL_COLS`, `NUMERICAL_COLS`, `ALL_FEATURES`), and threat risk weight constants.
+* **`src/loader.py`**: Responsible for loading serialized scikit-learn/XGBoost models (`rf_model.pkl`, `xgb_model.pkl`, `iso_model.pkl`) and preprocessor transformers (`preprocessor.pkl`).
+* **`src/generator.py`**: Generates synthetic, mathematically diverse network packet samples on demand for real-time scenario simulation.
+* **`src/preprocessing.py`**: Executes feature alignment, missing value imputation, one-hot encoding, and standard scaling.
+* **`src/hybrid.py`**: Serves as the central inference orchestrator. It receives raw DataFrames, passes them through `src/preprocessing.py`, executes parallel predictions across the model trio, and evaluates the consensus decision matrix.
+* **`src/explain.py`**: Receives model instances and preprocessed data arrays to generate SHAP summary figures and LIME local feature explanations.
+* **`ui/app.py`**: Streamlit presentation layer that imports all backend modules, providing interactive controls, metrics gauges, and visualization tabs.
 
 ---
 
@@ -361,6 +411,9 @@ After launching, open your browser and navigate to:
 
 ---
 
-## License
+## 📄 License & Author
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+Developed for real-time explainable cybersecurity research and multi-model intrusion detection optimization.
+
+* **Developer**: Yojasree (`Yojasree1905`)
+* **License**: MIT License — open for academic & commercial reuse. See [LICENSE](LICENSE) for details.
