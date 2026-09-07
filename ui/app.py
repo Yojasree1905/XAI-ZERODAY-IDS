@@ -624,8 +624,8 @@ elif page == "Batch Network Log Analyzer":
         st.markdown("---")
         
         # User-Friendly Audit & Plain English Action Plan
-        st.markdown("### Security Audit Report & Action Plan")
-        st.write("Below is a clear, human-readable breakdown of analyzed connection logs with expanded feature names and recommended security actions.")
+        st.markdown("### Security Audit Matrix & Action Plan")
+        st.write("Below is a clear breakdown of analyzed connection logs with expanded feature names and recommended security actions.")
         
         audit_df = pd.DataFrame({
             'Transport Protocol': raw_df['proto'] if 'proto' in raw_df.columns else full_df['proto'],
@@ -664,9 +664,9 @@ elif page == "Batch Network Log Analyzer":
         with col_exp1:
             csv_audit_export = audit_df.to_csv(index=False).encode('utf-8')
             st.download_button(
-                "Export Security Audit Report CSV",
+                "Export Security Audit CSV",
                 csv_audit_export,
-                "security_audit_report.csv",
+                "security_audit.csv",
                 "text/csv",
                 type="primary"
             )

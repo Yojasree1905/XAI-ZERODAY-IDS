@@ -276,7 +276,7 @@ The following diagram maps the explicit Python code-level interactions, module d
 
 3. **Batch Network Log Analyzer**:
    - Processes bulk CSV network log uploads through the full inference pipeline.
-   - Generates downloadable security audit reports with recommended security action plans (Block IP, Quarantine, Safe Traffic).
+   - Generates downloadable security audit logs with recommended security action plans (Block IP, Quarantine, Safe Traffic).
 
 4. **Engine Telemetry & Benchmarks**:
    - Displays empirical evaluation metrics (Accuracy, Precision, Recall, F1-Score) measured across 82,332 test samples from the UNSW-NB15 dataset.
