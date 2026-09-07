@@ -94,6 +94,14 @@ def prepare_full_features_dataframe(df_input):
     df_out['smean'] = df_out.apply(lambda r: int(r['sbytes'] / r['spkts']) if r['spkts'] > 0 else 82, axis=1)
     df_out['dmean'] = df_out.apply(lambda r: int(r['dbytes'] / r['dpkts']) if r['dpkts'] > 0 else 147, axis=1)
     df_out['sinpkt'] = df_out.apply(lambda r: float(r['dur'] * 1000.0 / r['spkts']) if r['spkts'] > 0 else 109.3, axis=1)
+    
+    # Protocol / Service specific flags
+    df_out['trans_depth'] = df_out.apply(lambda r: 1 if r['service'] == 'http' else 0, axis=1)
+    df_out['response_body_len'] = df_out.apply(lambda r: 184 if r['service'] == 'http' else 0, axis=1)
+    df_out['ct_flw_http_mthd'] = df_out.apply(lambda r: 1 if r['service'] == 'http' else 0, axis=1)
+    df_out['is_ftp_login'] = df_out.apply(lambda r: 1 if r['service'] == 'ftp' else 0, axis=1)
+    df_out['ct_ftp_cmd'] = df_out.apply(lambda r: 1 if r['service'] == 'ftp' else 0, axis=1)
+    
     df_out['ct_srv_dst'] = df_out['ct_srv_src']
     df_out['ct_src_ltm'] = df_out['ct_dst_ltm']
 
