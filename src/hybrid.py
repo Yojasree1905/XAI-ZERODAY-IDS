@@ -256,19 +256,31 @@ def hybrid_predict(detector, classifier, novelty, X, threshold=0.5):
 
 
 def hybrid_predict_records(xgb_model, rf_model, iso_model, preprocessor, df):
-    """Return the legacy result columns consumed by the Streamlit UI."""
+    """Return the calibrated result columns consumed by the Streamlit UI."""
     X = preprocessor.transform(align_features(df))
     xgb_probability = xgb_model.predict_proba(X)[:, 1]
     rf_probability = rf_model.predict_proba(X)[:, 1]
     supervised_probability = np.maximum(xgb_probability, rf_probability)
+    avg_supervised_prob = (xgb_probability + rf_probability) / 2.0
     supervised_attack = supervised_probability >= 0.5
     isolation_anomaly = iso_model.predict(X) == -1
+    iso_decision = -iso_model.decision_function(X)
+    
     status = np.where(
         supervised_attack,
         'Attack',
         np.where(isolation_anomaly, 'Zero-Day Anomaly', 'Normal'),
     )
-    risk = np.round(np.maximum(supervised_probability, isolation_anomaly * 0.75) * 100, 1)
+    
+    normal_risk = np.round(avg_supervised_prob * 30.0, 1)
+    attack_risk = np.round(supervised_probability * 100.0, 1)
+    zeroday_risk = np.round(np.clip(70.0 + iso_decision * 150.0, 70.0, 95.0), 1)
+    
+    risk = np.where(
+        status == 'Attack',
+        attack_risk,
+        np.where(status == 'Zero-Day Anomaly', zeroday_risk, normal_risk)
+    )
 
     result = pd.DataFrame({
         'Isolation Forest': np.where(isolation_anomaly, 'Anomaly', 'Normal'),

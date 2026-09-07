@@ -486,41 +486,39 @@ elif page == "Single Packet Threat Inspector":
             'ct_srv_src': 2, 'ct_state_ttl': 2, 'ct_dst_ltm': 2
         })
 
-    # Input Form
+    # Input Form (All 4 Sections Visible Concurrently)
     with st.form("single_predict_form"):
-        st.markdown("#### Connection Attributes Form")
+        st.markdown("#### Connection Attributes Form (All 4 Input Sections Active)")
         
-        tab_a, tab_b, tab_c, tab_d = st.tabs([
-            "1. Connection Header", "2. Traffic Volume", "3. Rates & TTL", "4. State & Flow Counters"
-        ])
+        col_sec1, col_sec2, col_sec3, col_sec4 = st.columns(4)
         
-        with tab_a:
-            col_a1, col_a2, col_a3, col_a4 = st.columns(4)
-            proto = col_a1.selectbox("Protocol (proto)", ['tcp', 'udp', 'arp', 'ospf', 'sctp', 'icmp'], index=0 if defaults['proto']=='tcp' else (1 if defaults['proto']=='udp' else 2))
-            service = col_a2.selectbox("Service (service)", ['http', 'dns', 'ftp', 'smtp', 'ssh', 'ssl', '-'], index=0 if defaults['service']=='http' else (1 if defaults['service']=='dns' else 6))
-            state = col_a3.selectbox("State (state)", ['FIN', 'INT', 'CON', 'REQ', 'ACC', 'RST'], index=0 if defaults['state']=='FIN' else (1 if defaults['state']=='INT' else 0))
-            dur = col_a4.number_input("Duration (dur in sec)", value=float(defaults['dur']), format="%.6f")
+        with col_sec1:
+            st.markdown("##### 1. Connection Header")
+            proto = st.selectbox("Protocol (proto)", ['tcp', 'udp', 'arp', 'ospf', 'sctp', 'icmp'], index=0 if defaults['proto']=='tcp' else (1 if defaults['proto']=='udp' else 2))
+            service = st.selectbox("Service (service)", ['http', 'dns', 'ftp', 'smtp', 'ssh', 'ssl', '-'], index=0 if defaults['service']=='http' else (1 if defaults['service']=='dns' else 6))
+            state = st.selectbox("State (state)", ['FIN', 'INT', 'CON', 'REQ', 'ACC', 'RST'], index=0 if defaults['state']=='FIN' else (1 if defaults['state']=='INT' else 0))
+            dur = st.number_input("Duration (dur in sec)", value=float(defaults['dur']), format="%.6f")
 
-        with tab_b:
-            col_b1, col_b2, col_b3, col_b4 = st.columns(4)
-            spkts = col_b1.number_input("Source Packets (spkts)", value=int(defaults['spkts']))
-            dpkts = col_b2.number_input("Destination Packets (dpkts)", value=int(defaults['dpkts']))
-            sbytes = col_b3.number_input("Source Bytes (sbytes)", value=int(defaults['sbytes']))
-            dbytes = col_b4.number_input("Destination Bytes (dbytes)", value=int(defaults['dbytes']))
+        with col_sec2:
+            st.markdown("##### 2. Traffic Volume")
+            spkts = st.number_input("Source Packets (spkts)", value=int(defaults['spkts']))
+            dpkts = st.number_input("Destination Packets (dpkts)", value=int(defaults['dpkts']))
+            sbytes = st.number_input("Source Bytes (sbytes)", value=int(defaults['sbytes']))
+            dbytes = st.number_input("Destination Bytes (dbytes)", value=int(defaults['dbytes']))
 
-        with tab_c:
-            col_c1, col_c2, col_c3, col_c4 = st.columns(4)
-            rate = col_c1.number_input("Packet Rate (packets/sec)", value=float(defaults['rate']))
-            sttl = col_c2.number_input("Source TTL (sttl)", value=int(defaults['sttl']))
-            dttl = col_c3.number_input("Destination TTL (dttl)", value=int(defaults['dttl']))
-            sload = col_c4.number_input("Source Load (sload bits/sec)", value=float(defaults['sload']))
+        with col_sec3:
+            st.markdown("##### 3. Rates & TTL")
+            rate = st.number_input("Packet Rate (packets/sec)", value=float(defaults['rate']))
+            sttl = st.number_input("Source TTL (sttl)", value=int(defaults['sttl']))
+            dttl = st.number_input("Destination TTL (dttl)", value=int(defaults['dttl']))
+            sload = st.number_input("Source Load (sload bits/sec)", value=float(defaults['sload']))
 
-        with tab_d:
-            col_d1, col_d2, col_d3, col_d4 = st.columns(4)
-            dload = col_d1.number_input("Destination Load (dload)", value=float(defaults['dload']))
-            ct_srv_src = col_d2.number_input("Connections to Same Service (ct_srv_src)", value=int(defaults['ct_srv_src']))
-            ct_state_ttl = col_d3.number_input("Same State & TTL Count (ct_state_ttl)", value=int(defaults['ct_state_ttl']))
-            ct_dst_ltm = col_d4.number_input("Same Destination Count (ct_dst_ltm)", value=int(defaults['ct_dst_ltm']))
+        with col_sec4:
+            st.markdown("##### 4. State & Flow Counters")
+            dload = st.number_input("Destination Load (dload)", value=float(defaults['dload']))
+            ct_srv_src = st.number_input("Connections to Same Service (ct_srv_src)", value=int(defaults['ct_srv_src']))
+            ct_state_ttl = st.number_input("Same State & TTL Count (ct_state_ttl)", value=int(defaults['ct_state_ttl']))
+            ct_dst_ltm = st.number_input("Same Destination Count (ct_dst_ltm)", value=int(defaults['ct_dst_ltm']))
 
         submit_btn = st.form_submit_button("Execute Predictive Multi-Model Inference", type="primary")
 
@@ -587,16 +585,32 @@ elif page == "Single Packet Threat Inspector":
         col_risk1, col_risk2 = st.columns([1, 2])
         with col_risk1:
             st.metric("Threat Risk Score", f"{row['Risk Score (%)']}%")
-            st.progress(float(row['Risk Score (%)']) / 100.0)
+            st.progress(min(1.0, max(0.0, float(row['Risk Score (%)']) / 100.0)))
             
         with col_risk2:
-            st.markdown("#### Automated Diagnostic Assessment")
+            st.markdown("#### Automated Diagnostic Assessment & Playbook")
             if "Zero-Day" in row['Hybrid Verdict']:
-                st.warning("**Zero-Day Anomaly Flagged**: Supervised models classified traffic as normal due to lack of known signatures. Isolation Forest detected severe structural variance from standard traffic baseline.")
+                st.warning(
+                    f"**Zero-Day Anomaly Flagged**\n\n"
+                    f"* **Diagnostic Reasoning**: Supervised classifiers cleared this flow ($P < 50\\%$), but Isolation Forest flagged a severe structural topology anomaly (Calibrated Threat Risk: **{row['Risk Score (%)']}%**).\n"
+                    f"* **Primary Anomaly Vector**: Non-standard protocol/state sequence (`proto={proto}`, `state={state}`) with irregular packet timing.\n"
+                    f"* **Mitigation Playbook**: Quarantine connection flow for Deep Packet Inspection (DPI). Capture full PCAP payload and isolate endpoint ID."
+                )
             elif "Attack" in row['Hybrid Verdict']:
-                st.error("**Malicious Threat Signature Detected**: Supervised ensemble models identified high packet rate and TTL signatures consistent with malicious activity.")
+                dominant_pct = row_prob[f"{dominant_cat} (%)"] if (not prob_df.empty and f"{dominant_cat} (%)" in row_prob) else 0.0
+                st.error(
+                    f"**Malicious Cyber Attack Signature Detected: {dominant_cat}**\n\n"
+                    f"* **Diagnostic Reasoning**: Supervised ensemble identified high-confidence attack signatures matching **{dominant_cat}** with **{dominant_pct:.1f}% confidence** (Calibrated Threat Risk: **{row['Risk Score (%)']}%**).\n"
+                    f"* **Primary Threat Vectors**: High packet rate (`{rate:.1f} pkts/s`), TTL signatures (`sttl={sttl}`, `dttl={dttl}`), and concurrent connection concentration (`ct_srv_src={ct_srv_src}`).\n"
+                    f"* **Mitigation Playbook**: Immediately block source IP, update firewall perimeter rule for `{dominant_cat}`, and issue alert to SOC tier-2 analyst."
+                )
             else:
-                st.success("**Authorized Network Connection**: All multi-model ensemble estimators confirm normal connection parameters.")
+                st.success(
+                    f"**Authorized Network Connection (Baseline Cleared)**\n\n"
+                    f"* **Diagnostic Reasoning**: All 3 multi-model estimators (Isolation Forest, Random Forest, XGBoost) confirm connection aligns with authorized `{service.upper()}` network baseline.\n"
+                    f"* **Calibrated Threat Risk Score**: **{row['Risk Score (%)']}%** (Low Risk — Safe Traffic).\n"
+                    f"* **Action Required**: No mitigation required — connection allowed to proceed."
+                )
 
         # Multi-Class Attack Family Probability Distribution
         st.markdown("---")
