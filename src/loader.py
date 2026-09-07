@@ -56,6 +56,18 @@ def load_models_and_preprocessor():
         
     return preprocessor, iso_model, rf_model, xgb_model
 
+def load_clf_model():
+    """Loads 10-class multi-class attack classifier model and class names."""
+    clf_path = MODEL_DIR / "clf_model.pkl"
+    cls_path = MODEL_DIR / "attack_classes.pkl"
+    clf_model = None
+    classes = None
+    if clf_path.exists():
+        clf_model = joblib.load(clf_path)
+    if cls_path.exists():
+        classes = joblib.load(cls_path)
+    return clf_model, classes
+
 def get_sample_test_data(n_samples=50):
     """Loads sample test dataset for fast demonstration and background explainer data."""
     csv_path = DATA_DIR / "UNSW_NB15_testing-set.csv"

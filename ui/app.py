@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.loader import (
     load_models_and_preprocessor,
+    load_clf_model,
     get_sample_test_data,
     prepare_full_features_dataframe,
     CATEGORICAL_COLS,
@@ -22,6 +23,7 @@ from src.loader import (
     ALL_FEATURES
 )
 from src.hybrid import hybrid_predict_records
+from src.preprocessing import align_features
 from src.explain import (
     get_global_feature_importance,
     compute_shap_summary,
@@ -43,110 +45,83 @@ st.markdown("""
 <style>
     /* Dark Cybersecurity Aesthetics */
     .stApp {
-        background-color: #0b0f19;
-        color: #d1d5db;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #0f172a;
+        color: #f8fafc;
     }
-    
-    /* Header Banner */
     .main-header {
-        background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #0f172a 100%);
-        padding: 22px 28px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        padding: 24px;
         border-radius: 12px;
-        border: 1px solid #1e293b;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        border: 1px solid #334155;
         margin-bottom: 24px;
         display: flex;
+        align-items: center;
         justify-content: space-between;
-        align-items: center;
     }
-    
     .main-header-title {
-        color: #38bdf8;
-        font-size: 1.6rem;
+        font-size: 28px;
         font-weight: 700;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 12px;
+        color: #38bdf8;
+        letter-spacing: -0.5px;
     }
-    
     .main-header-subtitle {
+        font-size: 14px;
         color: #94a3b8;
-        font-size: 0.95rem;
         margin-top: 4px;
-        margin-bottom: 0;
     }
-
     .status-indicator {
         background-color: #064e3b;
         color: #34d399;
-        padding: 6px 14px;
+        padding: 6px 12px;
         border-radius: 20px;
-        font-size: 0.85rem;
+        font-size: 12px;
         font-weight: 600;
         border: 1px solid #059669;
-        display: flex;
-        align-items: center;
-        gap: 6px;
     }
-
-    /* Metric Cards */
     .metric-card {
-        background: #111827;
+        background-color: #1e293b;
         border-radius: 10px;
-        padding: 18px;
-        border: 1px solid #1f2937;
-        border-left: 4px solid #38bdf8;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        padding: 16px;
+        border: 1px solid #334155;
+        text-align: center;
     }
-    
     .metric-card-title {
-        font-size: 0.8rem;
+        font-size: 12px;
+        color: #94a3b8;
         text-transform: uppercase;
-        color: #9ca3af;
-        letter-spacing: 0.6px;
-        font-weight: 600;
+        letter-spacing: 0.5px;
     }
-    
     .metric-card-value {
-        font-size: 1.8rem;
+        font-size: 24px;
         font-weight: 700;
-        color: #f9fafb;
+        color: #f8fafc;
         margin-top: 6px;
     }
-
-    /* Status Badges */
     .badge-normal {
-        background-color: rgba(16, 185, 129, 0.15);
+        background-color: #064e3b;
         color: #34d399;
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.15rem;
-        display: inline-block;
-        border: 1px solid #10b981;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1px solid #059669;
     }
-
     .badge-attack {
-        background-color: rgba(239, 68, 68, 0.15);
+        background-color: #7f1d1d;
         color: #f87171;
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.15rem;
-        display: inline-block;
-        border: 1px solid #ef4444;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1px solid #dc2626;
     }
-
     .badge-zeroday {
-        background-color: rgba(245, 158, 11, 0.15);
+        background-color: #78350f;
         color: #fbbf24;
-        padding: 8px 18px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.15rem;
-        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
         border: 1px solid #f59e0b;
     }
 
@@ -166,13 +141,25 @@ st.markdown("""
 # -----------------------------------------------------------------------------
 @st.cache_resource
 def get_cached_models():
-    return load_models_and_preprocessor()
+    prep, iso, rf, xgb = load_models_and_preprocessor()
+    clf, classes = load_clf_model()
+    return prep, iso, rf, xgb, clf, classes
 
 @st.cache_data
 def get_cached_sample_data():
     return get_sample_test_data(100)
 
-preprocessor, iso_model, rf_model, xgb_model = get_cached_models()
+preprocessor, iso_model, rf_model, xgb_model, clf_model, attack_classes = get_cached_models()
+
+def get_attack_category_probabilities(df_input):
+    """Computes multi-class probability percentages across all 10 attack/traffic categories."""
+    if clf_model is None or attack_classes is None:
+        return pd.DataFrame()
+    df_full = prepare_full_features_dataframe(df_input)
+    X = preprocessor.transform(align_features(df_full))
+    probas = clf_model.predict_proba(X) * 100.0
+    res_df = pd.DataFrame(probas, columns=[f"{c} (%)" for c in attack_classes], index=df_input.index)
+    return res_df.round(2)
 
 # Check readiness
 if preprocessor is None or xgb_model is None or iso_model is None:
@@ -310,7 +297,8 @@ if page == "Live Network Stream & Generator":
     
     # Run multi-model hybrid inference on live stream data
     res_df, X_trans = hybrid_predict_records(xgb_model, rf_model, iso_model, preprocessor, df_live)
-    combined = pd.concat([df_live.reset_index(drop=True), res_df], axis=1)
+    prob_df = get_attack_category_probabilities(df_live)
+    combined = pd.concat([df_live.reset_index(drop=True), res_df, prob_df], axis=1)
     
     total_pkts = len(res_df)
     attacks = len(res_df[res_df['Status'] == 'Attack'])
@@ -354,8 +342,11 @@ if page == "Live Network Stream & Generator":
     
     with c_left:
         st.markdown(f"#### Live Streaming Packet Classification Table ({current_technique})")
+        display_cols = ['proto', 'service', 'state', 'dur', 'rate', 'sttl', 'Hybrid Verdict', 'Risk Score (%)']
+        if not prob_df.empty:
+            display_cols += list(prob_df.columns[:4])
         st.dataframe(
-            combined[['proto', 'service', 'state', 'dur', 'rate', 'sttl', 'Hybrid Verdict', 'Risk Score (%)']],
+            combined[display_cols],
             use_container_width=True
         )
         
@@ -382,6 +373,23 @@ if page == "Live Network Stream & Generator":
             text.set_color('#ffffff')
         st.pyplot(fig_pie)
 
+    # Multi-Class Attack Distribution for Live Stream
+    if not prob_df.empty:
+        st.markdown("---")
+        st.markdown("#### Live Multi-Class Attack Category Probability Breakdown (%)")
+        st.write("Mean confidence percentage breakdown across all live streaming connections for all 10 attack/traffic categories:")
+        mean_probas = prob_df.mean().sort_values(ascending=False)
+        fig_live_bar, ax_lbar = plt.subplots(figsize=(10, 3.5))
+        cats = [c.replace(' (%)', '') for c in mean_probas.index]
+        sns.barplot(x=mean_probas.values, y=cats, palette="viridis", ax=ax_lbar)
+        ax_lbar.set_xlabel("Mean Probability (%)", color="#ffffff")
+        fig_live_bar.patch.set_facecolor('#111827')
+        ax_lbar.set_facecolor('#111827')
+        ax_lbar.tick_params(colors='#ffffff')
+        for spine in ax_lbar.spines.values():
+            spine.set_color('#334155')
+        st.pyplot(fig_live_bar)
+
 # -----------------------------------------------------------------------------
 # MODULE 2: SINGLE PACKET THREAT INSPECTOR
 # -----------------------------------------------------------------------------
@@ -403,7 +411,7 @@ elif page == "Single Packet Threat Inspector":
 
         1. **To Simulate Authorized Normal Traffic**:
            - Set **Protocol** to `tcp`, **Service** to `http`, **State** to `FIN`.
-           - Keep **Duration** around `0.05` seconds, **Packet Rate** `< 500`, **Source TTL** to `64`, **Source Load** `< 200,000`.
+           - Keep **Duration** around `0.98` seconds, **Packet Rate** `< 50`, **Source TTL** to `62`, **Destination TTL** to `252`.
            - Result: All models evaluate low threat scores -> **Normal Verdict**.
 
         2. **To Simulate Known Malicious Attacks (DDoS / Volumetric)**:
@@ -412,8 +420,8 @@ elif page == "Single Packet Threat Inspector":
            - Result: XGBoost & Random Forest trigger high attack probability -> **Malicious Threat**.
 
         3. **To Simulate Zero-Day Anomalies**:
-           - Set **Protocol** to `udp`, **Service** to `dns`, **State** to `INT`.
-           - Set an extreme **Source Load** (`> 50,000,000`) with an ultra-short microsecond **Duration** (`0.000009`s).
+           - Set **Protocol** to `arp`, **Service** to `-`, **State** to `INT`.
+           - Set **Duration** to `59.99` seconds with `spkts = 2`.
            - Result: Supervised models lack matching signatures (return Normal), but Isolation Forest detects severe structural anomaly -> **Zero-Day Anomaly**.
 
         ---
@@ -532,6 +540,9 @@ elif page == "Single Packet Threat Inspector":
         res_df, X_trans = hybrid_predict_records(xgb_model, rf_model, iso_model, preprocessor, full_df)
         row = res_df.iloc[0]
         
+        prob_df = get_attack_category_probabilities(full_df)
+        dominant_cat = prob_df.iloc[0].idxmax().replace(' (%)', '') if not prob_df.empty else 'Unknown'
+        
         st.markdown("---")
         st.subheader("Predictive Classification Matrix")
         
@@ -587,6 +598,74 @@ elif page == "Single Packet Threat Inspector":
             else:
                 st.success("**Authorized Network Connection**: All multi-model ensemble estimators confirm normal connection parameters.")
 
+        # Multi-Class Attack Family Probability Distribution
+        st.markdown("---")
+        st.subheader("Multi-Class Attack Family Probability Distribution (%)")
+        st.write("Confidence probability percentages across all 10 candidate attack/traffic categories evaluated by the Softmax classifier:")
+        
+        if not prob_df.empty:
+            row_prob = prob_df.iloc[0]
+            cols_p1 = st.columns(5)
+            cols_p2 = st.columns(5)
+            items = list(row_prob.items())
+            for idx, (cat_name, pct_val) in enumerate(items[:5]):
+                with cols_p1[idx]:
+                    st.metric(cat_name.replace(' (%)', ''), f"{pct_val:.2f}%")
+                    st.progress(min(1.0, max(0.0, float(pct_val) / 100.0)))
+            for idx, (cat_name, pct_val) in enumerate(items[5:]):
+                with cols_p2[idx]:
+                    st.metric(cat_name.replace(' (%)', ''), f"{pct_val:.2f}%")
+                    st.progress(min(1.0, max(0.0, float(pct_val) / 100.0)))
+            
+            fig_pbar, ax_pbar = plt.subplots(figsize=(10, 4))
+            cats = [c.replace(' (%)', '') for c in row_prob.index]
+            sns.barplot(x=row_prob.values, y=cats, palette="plasma", ax=ax_pbar)
+            ax_pbar.set_xlabel("Confidence Probability (%)", color="#ffffff")
+            ax_pbar.set_title("Softmax Multi-Class Probability Breakdown", color="#ffffff")
+            fig_pbar.patch.set_facecolor('#111827')
+            ax_pbar.set_facecolor('#111827')
+            ax_pbar.tick_params(colors='#ffffff')
+            for spine in ax_pbar.spines.values():
+                spine.set_color('#334155')
+            st.pyplot(fig_pbar)
+
+        # Raw Technical Connection Output
+        st.markdown("---")
+        st.subheader("Raw Technical Connection Output (All 42 Features & Threat Label)")
+        st.write("Complete 42-attribute technical packet specification with attached prediction labels:")
+        
+        raw_feat_dict = full_df.iloc[0].to_dict()
+        
+        summary_raw_df = pd.DataFrame([{
+            'Hybrid Threat Verdict': row['Hybrid Verdict'],
+            'Threat Risk Score (%)': f"{row['Risk Score (%)']}%",
+            'Dominant Attack Category': dominant_cat,
+            'Isolation Forest Decision': row['Isolation Forest'],
+            'Random Forest Decision': row['Random Forest'],
+            'XGBoost Decision': row['XGBoost'],
+        }])
+        st.dataframe(summary_raw_df, use_container_width=True)
+        
+        with st.expander("Inspect Complete 42-Feature Technical Data Table & Structured JSON"):
+            col_raw1, col_raw2 = st.columns(2)
+            feat_items = list(raw_feat_dict.items())
+            mid = len(feat_items) // 2
+            with col_raw1:
+                st.dataframe(pd.DataFrame(feat_items[:mid], columns=['Feature Code', 'Technical Value']), use_container_width=True)
+            with col_raw2:
+                st.dataframe(pd.DataFrame(feat_items[mid:], columns=['Feature Code', 'Technical Value']), use_container_width=True)
+            
+            complete_raw_json = {
+                "Threat_Audit_Metadata": {
+                    "Hybrid_Verdict": row['Hybrid Verdict'],
+                    "Risk_Score_Percent": float(row['Risk Score (%)']),
+                    "Dominant_Attack_Category": dominant_cat,
+                    "Multi_Class_Probabilities_Percent": row_prob.to_dict() if not prob_df.empty else {}
+                },
+                "Raw_42_Network_Features": raw_feat_dict
+            }
+            st.json(complete_raw_json)
+
 # -----------------------------------------------------------------------------
 # MODULE 3: BATCH NETWORK LOG ANALYZER & USER-FRIENDLY AUDIT
 # -----------------------------------------------------------------------------
@@ -610,7 +689,8 @@ elif page == "Batch Network Log Analyzer":
         with st.spinner("Executing batch multi-model evaluation..."):
             full_df = prepare_full_features_dataframe(raw_df)
             res_df, X_trans = hybrid_predict_records(xgb_model, rf_model, iso_model, preprocessor, full_df)
-            combined_df = pd.concat([raw_df.reset_index(drop=True), res_df], axis=1)
+            prob_df = get_attack_category_probabilities(full_df)
+            combined_df = pd.concat([raw_df.reset_index(drop=True), res_df, prob_df], axis=1)
             
         st.markdown("### Batch Evaluation Summary")
         m1, m2, m3, m4 = st.columns(4)
@@ -649,6 +729,8 @@ elif page == "Batch Network Log Analyzer":
                       else 'Safe Traffic - No Action Required')
             )
         })
+        if not prob_df.empty:
+            audit_df = pd.concat([audit_df, prob_df.reset_index(drop=True)], axis=1)
         
         filter_verdict = st.multiselect(
             "Filter Connections by Threat Classification:",
@@ -676,14 +758,14 @@ elif page == "Batch Network Log Analyzer":
             )
         with col_exp2:
             technical_df = pd.concat(
-                [full_df.reset_index(drop=True), res_df.reset_index(drop=True)],
+                [full_df.reset_index(drop=True), res_df.reset_index(drop=True), prob_df.reset_index(drop=True)],
                 axis=1,
             )
             csv_raw_export = technical_df.to_csv(index=False).encode('utf-8')
             st.download_button(
-                "Export Technical Raw Features CSV",
+                "Export Raw 42-Feature Logs CSV",
                 csv_raw_export,
-                "ids_technical_raw_predictions.csv",
+                "raw_technical_network_logs.csv",
                 "text/csv"
             )
 
