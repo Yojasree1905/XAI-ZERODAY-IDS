@@ -442,32 +442,40 @@ elif page == "Single Packet Threat Inspector":
         if st.button("Reset Form"):
             preset = "default"
 
-    # Default values dictionary
+    # Default values dictionary (Calibrated Normal Baseline)
     defaults = {
         'proto': 'tcp', 'service': 'http', 'state': 'FIN',
-        'dur': 0.05, 'spkts': 10, 'dpkts': 8, 'sbytes': 1000, 'dbytes': 1200,
-        'rate': 300.0, 'sttl': 62, 'dttl': 62, 'sload': 150000.0, 'dload': 180000.0,
-        'sloss': 0, 'dloss': 0, 'sinpkt': 5.2, 'dinpkt': 5.1, 'sjit': 10.0, 'djit': 9.5,
-        'swin': 255, 'stcpb': 1234567, 'dtcpb': 7654321, 'dwin': 255, 'tcprtt': 0.005,
-        'synack': 0.002, 'ackdat': 0.003, 'smean': 80, 'dmean': 87, 'trans_depth': 1,
-        'response_body_len': 120, 'ct_srv_src': 2, 'ct_state_ttl': 1, 'ct_dst_ltm': 2,
+        'dur': 0.98, 'spkts': 10, 'dpkts': 8, 'sbytes': 816, 'dbytes': 1172,
+        'rate': 17.27, 'sttl': 62, 'dttl': 252, 'sload': 5976.0, 'dload': 8342.0,
+        'sloss': 2, 'dloss': 2, 'sinpkt': 109.3, 'dinpkt': 124.9, 'sjit': 5929.0, 'djit': 192.5,
+        'swin': 255, 'stcpb': 794167371, 'dtcpb': 1624757001, 'dwin': 255, 'tcprtt': 0.206,
+        'synack': 0.108, 'ackdat': 0.098, 'smean': 82, 'dmean': 147, 'trans_depth': 1,
+        'response_body_len': 184, 'ct_srv_src': 2, 'ct_state_ttl': 1, 'ct_dst_ltm': 1,
         'ct_src_dport_ltm': 1, 'ct_dst_sport_ltm': 1, 'ct_dst_src_ltm': 2,
-        'is_ftp_login': 0, 'ct_ftp_cmd': 0, 'ct_flw_http_mthd': 1, 'ct_src_ltm': 2,
-        'ct_srv_dst': 2, 'is_sm_ips_ports': 0
+        'is_ftp_login': 0, 'ct_ftp_cmd': 0, 'ct_flw_http_mthd': 1, 'ct_src_ltm': 1,
+        'ct_srv_dst': 3, 'is_sm_ips_ports': 0
     }
     
-    if preset == "ddos":
+    if preset == "normal":
         defaults.update({
+            'proto': 'tcp', 'service': 'http', 'state': 'FIN',
+            'dur': 0.98, 'spkts': 10, 'dpkts': 8, 'sbytes': 816, 'dbytes': 1172,
+            'rate': 17.27, 'sttl': 62, 'dttl': 252, 'sload': 5976.0, 'dload': 8342.0,
+            'ct_srv_src': 2, 'ct_state_ttl': 1, 'ct_dst_ltm': 1
+        })
+    elif preset == "ddos":
+        defaults.update({
+            'proto': 'tcp', 'service': 'http', 'state': 'FIN',
             'dur': 0.50, 'spkts': 300, 'dpkts': 280, 'sbytes': 60000, 'dbytes': 55000,
             'rate': 9500.0, 'sttl': 254, 'dttl': 0, 'sload': 5000000.0, 'dload': 0.0,
             'ct_srv_src': 15, 'ct_state_ttl': 5, 'ct_dst_ltm': 15, 'ct_src_dport_ltm': 12
         })
     elif preset == "zeroday":
         defaults.update({
-            'proto': 'udp', 'service': 'dns', 'state': 'INT',
-            'dur': 0.000009, 'spkts': 2, 'dpkts': 0, 'sbytes': 114, 'dbytes': 0,
-            'rate': 111111.1, 'sttl': 254, 'dttl': 0, 'sload': 50666668.0, 'dload': 0.0,
-            'ct_srv_src': 16, 'ct_state_ttl': 2, 'ct_dst_ltm': 16, 'ct_src_dport_ltm': 16
+            'proto': 'arp', 'service': '-', 'state': 'INT',
+            'dur': 59.99, 'spkts': 2, 'dpkts': 0, 'sbytes': 92, 'dbytes': 0,
+            'rate': 0.016, 'sttl': 0, 'dttl': 0, 'sload': 6.13, 'dload': 0.0,
+            'ct_srv_src': 2, 'ct_state_ttl': 2, 'ct_dst_ltm': 2
         })
 
     # Input Form
@@ -480,9 +488,9 @@ elif page == "Single Packet Threat Inspector":
         
         with tab_a:
             col_a1, col_a2, col_a3, col_a4 = st.columns(4)
-            proto = col_a1.selectbox("Protocol (proto)", ['tcp', 'udp', 'arp', 'ospf', 'sctp', 'icmp'], index=0 if defaults['proto']=='tcp' else 1)
-            service = col_a2.selectbox("Service (service)", ['http', 'dns', 'ftp', 'smtp', 'ssh', 'ssl', '-'], index=0 if defaults['service']=='http' else (1 if defaults['service']=='dns' else 3))
-            state = col_a3.selectbox("State (state)", ['FIN', 'INT', 'CON', 'REQ', 'ACC', 'RST'], index=0 if defaults['state']=='FIN' else 1)
+            proto = col_a1.selectbox("Protocol (proto)", ['tcp', 'udp', 'arp', 'ospf', 'sctp', 'icmp'], index=0 if defaults['proto']=='tcp' else (1 if defaults['proto']=='udp' else 2))
+            service = col_a2.selectbox("Service (service)", ['http', 'dns', 'ftp', 'smtp', 'ssh', 'ssl', '-'], index=0 if defaults['service']=='http' else (1 if defaults['service']=='dns' else 6))
+            state = col_a3.selectbox("State (state)", ['FIN', 'INT', 'CON', 'REQ', 'ACC', 'RST'], index=0 if defaults['state']=='FIN' else (1 if defaults['state']=='INT' else 0))
             dur = col_a4.number_input("Duration (dur in sec)", value=float(defaults['dur']), format="%.6f")
 
         with tab_b:
@@ -518,12 +526,8 @@ elif page == "Single Packet Threat Inspector":
             'ct_dst_ltm': ct_dst_ltm
         })
         
-        if preset == "normal":
-            # Use a real labeled-normal connection so the preset represents the training distribution.
-            full_df = generate_synthetic_dataset("Normal Web Traffic", 1, random_seed=42)
-        else:
-            single_df = pd.DataFrame([input_data])
-            full_df = prepare_full_features_dataframe(single_df)
+        single_df = pd.DataFrame([input_data])
+        full_df = prepare_full_features_dataframe(single_df)
         
         res_df, X_trans = hybrid_predict_records(xgb_model, rf_model, iso_model, preprocessor, full_df)
         row = res_df.iloc[0]

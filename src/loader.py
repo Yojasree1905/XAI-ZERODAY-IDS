@@ -72,23 +72,30 @@ def prepare_full_features_dataframe(df_input):
     """Ensures input DataFrame contains all 42 expected feature columns."""
     df_out = df_input.copy()
     
-    # Defaults
+    # Defaults based on real UNSW-NB15 Normal HTTP connection baseline
     defaults = {
         'proto': 'tcp', 'service': 'http', 'state': 'FIN',
-        'dur': 0.05, 'spkts': 10, 'dpkts': 8, 'sbytes': 1000, 'dbytes': 1200,
-        'rate': 300.0, 'sttl': 62, 'dttl': 62, 'sload': 150000.0, 'dload': 180000.0,
-        'sloss': 0, 'dloss': 0, 'sinpkt': 5.0, 'dinpkt': 5.0, 'sjit': 10.0, 'djit': 10.0,
-        'swin': 255, 'stcpb': 100000, 'dtcpb': 100000, 'dwin': 255, 'tcprtt': 0.01,
-        'synack': 0.005, 'ackdat': 0.005, 'smean': 100, 'dmean': 150, 'trans_depth': 0,
-        'response_body_len': 0, 'ct_srv_src': 2, 'ct_state_ttl': 1, 'ct_dst_ltm': 2,
+        'dur': 0.98, 'spkts': 10, 'dpkts': 8, 'sbytes': 816, 'dbytes': 1172,
+        'rate': 17.27, 'sttl': 62, 'dttl': 252, 'sload': 5976.0, 'dload': 8342.0,
+        'sloss': 2, 'dloss': 2, 'sinpkt': 109.3, 'dinpkt': 124.9, 'sjit': 5929.0, 'djit': 192.5,
+        'swin': 255, 'stcpb': 794167371, 'dtcpb': 1624757001, 'dwin': 255, 'tcprtt': 0.206,
+        'synack': 0.108, 'ackdat': 0.098, 'smean': 82, 'dmean': 147, 'trans_depth': 1,
+        'response_body_len': 184, 'ct_srv_src': 2, 'ct_state_ttl': 1, 'ct_dst_ltm': 1,
         'ct_src_dport_ltm': 1, 'ct_dst_sport_ltm': 1, 'ct_dst_src_ltm': 2,
-        'is_ftp_login': 0, 'ct_ftp_cmd': 0, 'ct_flw_http_mthd': 0, 'ct_src_ltm': 2,
-        'ct_srv_dst': 2, 'is_sm_ips_ports': 0
+        'is_ftp_login': 0, 'ct_ftp_cmd': 0, 'ct_flw_http_mthd': 1, 'ct_src_ltm': 1,
+        'ct_srv_dst': 3, 'is_sm_ips_ports': 0
     }
     
     for col in ALL_FEATURES:
         if col not in df_out.columns:
             df_out[col] = defaults.get(col, 0)
             
+    # Dynamic feature derivations
+    df_out['smean'] = df_out.apply(lambda r: int(r['sbytes'] / r['spkts']) if r['spkts'] > 0 else 82, axis=1)
+    df_out['dmean'] = df_out.apply(lambda r: int(r['dbytes'] / r['dpkts']) if r['dpkts'] > 0 else 147, axis=1)
+    df_out['sinpkt'] = df_out.apply(lambda r: float(r['dur'] * 1000.0 / r['spkts']) if r['spkts'] > 0 else 109.3, axis=1)
+    df_out['ct_srv_dst'] = df_out['ct_srv_src']
+    df_out['ct_src_ltm'] = df_out['ct_dst_ltm']
+
     # Ensure correct column order
     return df_out[ALL_FEATURES]
